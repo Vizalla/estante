@@ -1,37 +1,235 @@
 # Arquitectura del Sistema - Proyecto Estante
 
-## Visión general
-El sistema Estante está diseñado bajo un patrón de arquitectura de **N-Capas** (Presentación, Negocio y Datos). Esta estructura permite separar las responsabilidades, facilitando el mantenimiento y permitiendo que el sistema de gestión de biblioteca sea escalable y robusto frente a cambios futuros.
+## Descripción general
 
-## Componentes principales
-1. **Módulo de Interfaz (GUI):** Gestiona la interacción con el bibliotecario, capturando datos de búsqueda y registro de libros.
-2. **Controlador de Préstamos:** Contiene la lógica para validar si un usuario puede llevarse un libro (verificación de multas y stock).
-3. **Gestor de Inventario:** Administra las altas, bajas y modificaciones del catálogo bibliográfico.
-4. **Capa de Persistencia:** Maneja el almacenamiento de datos en archivos planos o bases de datos relacionales.
+El sistema está diseñado bajo una arquitectura en capas que separa la presentación, la lógica de negocio y el acceso a datos. Esta organización permite mantener un código modular, escalable y fácil de mantener.
 
-## Diagrama de arquitectura
+La aplicación funciona como un gestor de bases de datos orientado a la
+administración y manipulación de información mediante una interfaz de línea
+de comandos (CLI).
 
-*El sistema separa la interfaz de usuario de la lógica de procesamiento y el almacenamiento final.*
+Actualmente el proyecto se encuentra en desarrollo, por lo que algunos módulos
+podrán modificarse o ampliarse conforme evolucione el sistema.
+
+---
+
+# Objetivos de la arquitectura
+
+La arquitectura del sistema busca:
+
+- Separar responsabilidades entre componentes
+- Facilitar el mantenimiento del código
+- Permitir escalabilidad futura
+- Reducir el acoplamiento entre módulos
+- Facilitar pruebas y depuración
+- Mantener una estructura organizada del proyecto
+
+---
 
 ## Tecnologías utilizadas
 
-| Componente | Tecnología | Versión | Justificación |
-|---|---|---|---|
-| Lenguaje Core | Python | 3.10+ | Facilidad para manejo de estructuras de datos y legibilidad. |
-| Gestión de Datos | SQLite / JSON | N/A | Portabilidad y ligereza para un sistema local de biblioteca. |
-| Control de Versiones | Git / GitHub | 2.x | Estándar de la industria para el trabajo colaborativo en el FNI. |
-| Documentación | Markdown | N/A | Integración nativa con GitHub y facilidad de lectura. |
+| Tecnología   | Versión | Descripción |
+|-------------|--------|-------------|
+| Java        | 17     | Lenguaje principal de la aplicación |
+| PostgreSQL  | 15     | Sistema de gestión de base de datos |
+| JDBC Driver | 42.x   | Conector entre Java y PostgreSQL |
+| Maven       | 3.x    | Herramienta de gestión de dependencias |
 
-## Decisiones de diseño
+---
 
-### Decisión 1: Trunk-Based Development (Uso de rama DEV)
-**Contexto:** Necesidad de mantener una rama estable para producción mientras se integran nuevas funciones.
-**Decisión:** Se adopta el flujo de trabajo basado en la rama `dev`. Ningún cambio llega a `main` sin ser probado previamente.
-**Consecuencias:** Mayor estabilidad en el código base y un historial de cambios más limpio y organizado.
+# Arquitectura general
+
+El sistema sigue una arquitectura cliente-servidor simplificada donde
+la aplicación Java actúa como intermediaria entre el usuario y la base
+de datos PostgreSQL.
+
+## Diagrama general
+
+```text
++----------------------+
+|      Usuario         |
+|        (CLI)         |
++----------+-----------+
+           |
+           v
++----------------------+
+|  Capa de Presentación|
+|     Interfaz CLI     |
++----------+-----------+
+           |
+           v
++----------------------+
+| Lógica de Negocio    |
+| Validaciones         |
+| Procesamiento        |
+| Operaciones CRUD     |
++----------+-----------+
+           |
+           v
++----------------------+
+| Acceso a Datos       |
+| JDBC / Persistencia  |
++----------+-----------+
+           |
+           v
++----------------------+
+| PostgreSQL           |
+| Base de Datos        |
++----------------------+
+```
+
+---
+
+# Capas del sistema
+
+## 1. Capa de Presentación
+
+Responsable de la interacción entre el usuario y el sistema.
+
+### Responsabilidades
+
+- Mostrar menús y opciones
+- Recibir comandos y consultas
+- Mostrar resultados
+- Gestionar mensajes de error
+- Validar entradas básicas
+
+### Componentes esperados
+
+- CLI principal
+- Menús interactivos
+- Control de navegación
+
+---
+
+## 2. Capa de Lógica de Negocio
+
+Contiene las reglas principales del sistema y coordina las operaciones.
+
+### Responsabilidades
+
+- Procesar solicitudes del usuario
+- Validar reglas del sistema
+- Gestionar operaciones CRUD
+- Coordinar acceso a datos
+- Manejar flujo interno de operaciones
+
+### Posibles módulos
+
+- Gestión de tablas
+- Gestión de registros
+- Validación de datos
+- Procesador de consultas
+
+---
+
+## 3. Capa de Acceso a Datos
+
+Encargada de la comunicación con PostgreSQL mediante JDBC.
+
+### Responsabilidades
+
+- Abrir conexiones con la base de datos
+- Ejecutar consultas SQL
+- Recuperar resultados
+- Manejar transacciones
+- Gestionar errores de persistencia
+
+### Componentes esperados
+
+- DAO (Data Access Object)
+- Gestor de conexiones
+- Ejecutores SQL
+
+---
+
+## 4. Capa de Datos
+
+Representa el sistema PostgreSQL donde se almacena la información.
+
+### Responsabilidades
+
+- Persistencia de datos
+- Integridad de la información
+- Ejecución de consultas
+- Gestión de tablas y registros
+
+---
 
 ## Flujo de datos
-1. **Entrada:** El bibliotecario ingresa el ISBN del libro y el CI del usuario.
-2. **Procesamiento:** El sistema consulta la base de datos para verificar la disponibilidad del ejemplar y el estado del socio.
-3. **Validación:** Se aplican las reglas de negocio (ej. el usuario no debe tener más de 3 libros).
-4. **Almacenamiento:** Se registra la transacción con la fecha de salida y la fecha límite de devolución.
-5. **Salida:** El sistema confirma el préstamo y actualiza el estado del libro a "Prestado".
+
+El flujo general del sistema funciona de la siguiente manera:
+
+1. El usuario ingresa una consulta o comando en la interfaz CLI.
+2. La capa de presentación recibe y valida la entrada.
+3. La lógica de negocio procesa la operación solicitada.
+4. La capa de acceso a datos genera y ejecuta consultas SQL mediante JDBC.
+5. PostgreSQL procesa la consulta.
+6. Los resultados retornan a la aplicación.
+7. La aplicación muestra la respuesta al usuario.
+
+---
+
+# Gestión de dependencias
+
+El proyecto utiliza `Maven` para:
+
+- Administración de librerías
+- Compilación del proyecto
+- Gestión de dependencias
+- Estandarización de builds
+
+Esto facilita la portabilidad y configuración del entorno de desarrollo.
+
+---
+
+## Decisiones técnicas
+
+## Uso de Java
+
+Se eligió Java por:
+
+- Portabilidad multiplataforma
+- Amplio ecosistema
+- Integración estable con PostgreSQL
+- Facilidad para manejar aplicaciones orientadas a objetos
+
+## Uso de PostgreSQL
+
+Se seleccionó PostgreSQL debido a:
+
+- Robustez y estabilidad
+- Soporte para consultas complejas
+- Integridad y consistencia de datos
+- Amplio uso en entornos profesionales
+
+## Uso de JDBC
+
+JDBC permite:
+
+- Comunicación estándar con PostgreSQL
+- Independencia del motor de base de datos
+- Manejo directo de consultas SQL
+
+---
+
+# Escalabilidad futura
+
+La arquitectura actual permite incorporar nuevas funcionalidades como:
+
+- Interfaces gráficas
+- Sistema de autenticación
+- Optimización de consultas
+- Soporte para múltiples conexiones
+- Nuevos módulos de administración
+- Reportes y estadísticas
+
+---
+
+# Estado actual del sistema
+
+El proyecto se encuentra en una etapa inicial de desarrollo.
+La arquitectura presentada representa la base estructural sobre la cual
+evolucionará el sistema Estante.
+
+Algunos componentes descritos pueden implementarse progresivamente en futuras versiones.

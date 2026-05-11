@@ -1,3 +1,6 @@
+package edu.sisinf.estante;
+import edu.sisinf.estante.util.SqlValidator;
+
 public class Main {
     public static void main(String[] args) {
         // Pruebas de validación SQL
